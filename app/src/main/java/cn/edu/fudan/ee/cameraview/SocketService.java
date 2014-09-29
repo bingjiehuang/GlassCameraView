@@ -2,12 +2,15 @@ package cn.edu.fudan.ee.cameraview;
 
 import android.app.Service;
 import android.content.Intent;
-import android.hardware.Camera;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.Message;
+import android.util.Log;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 
 
@@ -16,6 +19,7 @@ import java.net.*;
  */
 public class SocketService extends Service {
     private final IBinder mBinder = new LocalBinder();
+    private CameraParams rawParams;
     @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
@@ -24,6 +28,9 @@ public class SocketService extends Service {
         SocketService getService(){
             return SocketService.this;
         }
+    }
+    public CameraParams getRawParams(){
+        return rawParams;
     }
     private ServerSocket serverSocket = null;
     final int SERVER_PORT = 1111;
@@ -41,11 +48,14 @@ public class SocketService extends Service {
                     while(true) {
                         try {
                             Socket socket = serverSocket.accept();
+                            Log.d("SocketServer", "Accepted");
                             while (true) {
                                 try {
                                     ObjectInputStream objIn = new ObjectInputStream(socket.getInputStream());
-                                    Camera.Parameters params = (Camera.Parameters)(objIn.readObject());
-
+                                    rawParams = (CameraParams)(objIn.readObject());
+                                    Message msg = new Message();
+                                    msg.obj = rawParams;
+                                    CameraPreview.myHandler.sendMessage(msg);
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                     break;
@@ -66,4 +76,8 @@ public class SocketService extends Service {
     public void onDestroy() {
         super.onDestroy();
     }
+}
+class CameraParams{
+    public int params1;
+    public int params2;
 }

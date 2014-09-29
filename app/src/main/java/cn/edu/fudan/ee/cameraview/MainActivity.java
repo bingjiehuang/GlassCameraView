@@ -20,13 +20,16 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mPreview = new CameraPreview(this);
+
         FrameLayout layout = new FrameLayout(this);
         layout.addView(mPreview);
         layout.addView(new View(this));
         layout.setKeepScreenOn(true);
         setContentView(layout);
+
         Intent intent = new Intent(MainActivity.this, SocketService.class);
         bindService(intent, conn, Context.BIND_AUTO_CREATE);
+
     }
 
     @Override
