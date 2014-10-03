@@ -10,6 +10,9 @@ import android.view.SurfaceView;
 
 import java.io.IOException;
 
+import cn.edu.fudan.ee.glasscamera.CameraParams;
+
+
 /**
  * Created by zxtxin on 2014/9/2.
  */
@@ -28,8 +31,10 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
                 CameraParams rawParams = (CameraParams)msg.obj;
-                params.setRotation(rawParams.params1);
+                Log.i("rawParams","get");
+                params.setZoom(rawParams.params1);
                 mCamera.setParameters(params);
+                Log.i("Received Parameters Set",""+rawParams.params1);
             }
         };
     }
@@ -59,7 +64,6 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
         Log.i("Supported Scene Mode",params.getSupportedSceneModes().toString());
         Log.i("Zoom Supported",""+params.isZoomSupported());
         Log.i("Max Zoom",""+params.getMaxZoom());
-        params.setZoom(60);
         Log.i("Zoom",""+ params.getZoom());
         mCamera.setParameters(params);
         try

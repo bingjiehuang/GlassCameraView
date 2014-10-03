@@ -12,14 +12,14 @@ import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-
+import cn.edu.fudan.ee.glasscamera.CameraParams;
 
 /**
  * Created by zxtxin on 2014/9/17.
  */
+
 public class SocketService extends Service {
     private final IBinder mBinder = new LocalBinder();
-    private CameraParams rawParams;
     @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
@@ -29,11 +29,8 @@ public class SocketService extends Service {
             return SocketService.this;
         }
     }
-    public CameraParams getRawParams(){
-        return rawParams;
-    }
     private ServerSocket serverSocket = null;
-    final int SERVER_PORT = 1111;
+    final int SERVER_PORT = 22222;
     @Override
     public void onCreate() {
         super.onCreate();
@@ -49,23 +46,40 @@ public class SocketService extends Service {
                         try {
                             Socket socket = serverSocket.accept();
                             Log.d("SocketServer", "Accepted");
+
+
+                            ObjectInputStream objIn = new ObjectInputStream(socket.getInputStream());
+                            Log.i("objIn","initialed");
+
                             while (true) {
                                 try {
-                                    ObjectInputStream objIn = new ObjectInputStream(socket.getInputStream());
-                                    rawParams = (CameraParams)(objIn.readObject());
+
+
+
+                                    Object obj = objIn.readObject();
+                                    CameraParams test = (CameraParams)obj;
+                                    Log.i("test.1",""+test.params1);
+                                    Log.i("readObject","OK ");
                                     Message msg = new Message();
-                                    msg.obj = rawParams;
+                                    msg.obj = obj;
+
                                     CameraPreview.myHandler.sendMessage(msg);
-                                } catch (IOException e) {
+                                    Log.i("Message","sent");
+
+                                }
+                                catch (IOException e) {
                                     e.printStackTrace();
+                                    Log.i("Wrong","objIn");
                                     break;
-                                } catch (ClassNotFoundException e) {
+                                }
+                                catch (ClassNotFoundException e) {
                                     e.printStackTrace();
                                     break;
                                 }
                             }
                         }catch(IOException e) {
                             e.printStackTrace();
+                            Log.i("Wrong","socket");
                         }
                     }
             }
@@ -76,8 +90,4 @@ public class SocketService extends Service {
     public void onDestroy() {
         super.onDestroy();
     }
-}
-class CameraParams{
-    public int params1;
-    public int params2;
 }
