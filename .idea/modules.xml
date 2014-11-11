@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CameraView.iml" filepath="$PROJECT_DIR$/CameraView.iml" />
+      <module fileurl="file://$PROJECT_DIR$/GlassCameraView.iml" filepath="$PROJECT_DIR$/GlassCameraView.iml" />
       <module fileurl="file://$PROJECT_DIR$/GlassCameraView-master.iml" filepath="$PROJECT_DIR$/GlassCameraView-master.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
