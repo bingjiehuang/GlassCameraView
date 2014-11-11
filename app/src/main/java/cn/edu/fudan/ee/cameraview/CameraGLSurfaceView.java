@@ -1,32 +1,33 @@
 package cn.edu.fudan.ee.cameraview;
 
 import android.content.Context;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.opengles.GL10;
 
 import cn.edu.fudan.ee.glasscamera.CameraParams;
-import java.io.File;
 
+public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+    private static final String TAG = "Google Glass";
 
-/**
- * Created by zxtxin on 2014/9/2.
- */
-class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
-    SurfaceHolder mHolder;
-    static Handler myHandler;
+    Context mContext;
+    SurfaceTexture mSurface;
+    int[] mTextureID = new int[1];
+    DirectDrawer mDirectDrawer;
     Camera mCamera;
-    private Camera.Parameters params;
+    Camera.Parameters params;
+    public static Handler myHandler;
     static CameraParams myParams;// 用于初始化相机参数、接收服务端socket通信发送的相机参数、用户改变相机参数时保存参数
     static CameraParams receiveParams;// 用于在handler中保存接收的相机参数
     String filePath = Environment.getExternalStorageDirectory().getPath()+"/savedInitialParams.ser";// 保存相机参数的文件
@@ -37,12 +38,13 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
             params.WHITE_BALANCE_TWILIGHT, params.WHITE_BALANCE_WARM_FLUORESCENT};
     private String[] effect_AntiBanding = new String[]{params.ANTIBANDING_AUTO, params.ANTIBANDING_50HZ, params.ANTIBANDING_60HZ,
             params.ANTIBANDING_OFF};
-
-    public CameraPreview(Context context) {
+    public CameraGLSurfaceView(Context context) {
         super(context);
-        mHolder = this.getHolder();
-        mHolder.addCallback(this);
-//        mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
+        mContext = context;
+        setEGLContextClientVersion(2);
+        setRenderer(this);
+        setRenderMode(RENDERMODE_WHEN_DIRTY);
         myHandler = new Handler(){
             @Override
             public void handleMessage(Message msg) {
@@ -96,76 +98,6 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
             }
         };
     }
-
-
-    @Override
-    public void surfaceChanged(SurfaceHolder arg0, int arg1, int arg2, int arg3) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder arg0) {
-    	/* 启动Camera */
-        mCamera = Camera.open();
-        params = mCamera.getParameters();
-        params.setAutoWhiteBalanceLock(true);
-        params.setAutoExposureLock(false);
-        params.setPreviewFpsRange(30000, 30000);
-        params.setPreviewSize(640, 360);
-
-
-        // 启动相机后加载内存保存的相机初始参数
-        myParams = fileOperation.createOrLoadParamsFromFile(filePath);
-        // 初始设置相机显示效果参数
-        applyEffect(0, myParams.params1);
-        applyEffect(1, myParams.params2);
-        applyEffect(2, myParams.params3);
-
-        // 获取相机支持的参数
-        Log.i("isAutoExposureLockSupported", ""+params.isAutoExposureLockSupported());
-        Log.i("Supported Antibanding", params.getSupportedAntibanding().toString());
-        Log.i("Antibanding", params.getAntibanding());
-        Log.i("Color Effect",params.getColorEffect());
-        Log.i("Exposure Compensation",""+params.getExposureCompensation());
-        Log.i("Min Exposure Compensation Step",""+params.getMinExposureCompensation());
-        Log.i("Max Exposure Compensation",""+params.getMaxExposureCompensation());
-        Log.i("Exposure Compensation Step",""+params.getExposureCompensationStep());
-        Log.i("Flash Mode",params.getFlashMode());
-        Log.i("Supported Flash Mode",params.getSupportedFlashModes().toString());
-        Log.i("Scene Mode",params.getSceneMode());
-        Log.i("Supported Scene Mode",params.getSupportedSceneModes().toString());
-        Log.i("Zoom Supported",""+params.isZoomSupported());
-        Log.i("Max Zoom",""+params.getMaxZoom());
-        Log.i("Zoom",""+ params.getZoom());
-        Log.i("SupportedWhiteBalance",""+params.getSupportedWhiteBalance());
-        Log.i("WhiteBalance",""+params.getWhiteBalance());
-
-        mCamera.setParameters(params);
-        Log.i("surfaceCreated后AutoExposureLock的状态",""+params.getAutoExposureLock());
-        try
-        {
-            mCamera.setPreviewDisplay(arg0);
-            mCamera.startPreview();
-        }
-        catch (IOException e)
-        {
-        	/* 释放mCamera */
-            mCamera.release();
-            mCamera = null;
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder arg0) {
-    	/* 停止预览 */
-        mCamera.stopPreview();
-        mCamera.release();
-        mCamera = null;
-
-    }
-
     // 测试各种效果的参数
     // type_effect为效果类型，choose为选择该效果的哪种类型
     public void applyEffect(int type_effect, int choose)
@@ -226,4 +158,75 @@ class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
         params.setAntibanding(effect_AntiBanding[choose]);
         Log.i("later Antibanding",""+params.getAntibanding());
     }
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+
+        Log.i(TAG, "onSurfaceCreated...");
+        createTextureID();
+        mSurface = new SurfaceTexture(mTextureID[0]);
+        mSurface.setOnFrameAvailableListener(this);
+        mDirectDrawer = new DirectDrawer(mTextureID[0]);
+
+        mCamera = Camera.open();
+        params = mCamera.getParameters();
+        params.setPreviewFpsRange(30000, 30000);
+        params.setPreviewSize(640, 360);
+        mCamera.setParameters(params);
+        try {
+            mCamera.setPreviewTexture(mSurface);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mCamera.startPreview();
+
+
+    }
+    @Override
+    public void onSurfaceChanged(GL10 gl, int width, int height) {
+
+        Log.i(TAG, "onSurfaceChanged...");
+        GLES20.glViewport(0, 0, width, height);
+
+
+
+    }
+    @Override
+    public void onDrawFrame(GL10 gl) {
+
+//		Log.i(TAG, "onDrawFrame...");
+        GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+        mSurface.updateTexImage();
+        mDirectDrawer.draw();
+    }
+
+    @Override
+    public void onPause() {
+
+        super.onPause();
+        //	CameraInterface.getInstance().doStopCamera();
+        mCamera.stopPreview();
+        mCamera.release();
+        mCamera = null;
+    }
+    private void createTextureID()
+    {
+        GLES20.glGenTextures(1, mTextureID, 0);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureID[0]);
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GL10.GL_TEXTURE_MIN_FILTER,GL10.GL_LINEAR);
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
+                GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
+    }
+    @Override
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+
+//		Log.i(TAG, "onFrameAvailable...");
+        requestRender();
+    }
+
 }

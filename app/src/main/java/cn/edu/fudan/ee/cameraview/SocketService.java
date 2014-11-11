@@ -77,15 +77,15 @@ public class SocketService extends Service {
                             {
                                 // Input
                                 Object obj = objIn.readObject();
-                                CameraPreview.myParams = (CameraParams)obj;
+                                CameraGLSurfaceView.myParams = (CameraParams)obj;
                                 Log.i("readObject","OK ");
-                                Log.i("myParams.1","params1 : "+CameraPreview.myParams.params1);
+                                Log.i("myParams.1","params1 : "+CameraGLSurfaceView.myParams.params1);
                                 // 测试各种参数
-                                Log.i("myParams.2","params2 : "+CameraPreview.myParams.params2);
-                                Log.i("myParams.3","params3 : "+CameraPreview.myParams.params3);
+                                Log.i("myParams.2","params2 : "+CameraGLSurfaceView.myParams.params2);
+                                Log.i("myParams.3","params3 : "+CameraGLSurfaceView.myParams.params3);
                                 Message msg = new Message();
                                 msg.obj = obj;
-                                CameraPreview.myHandler.sendMessage(msg);
+                                CameraGLSurfaceView.myHandler.sendMessage(msg);
                                 Log.i("Message","sent");
 
                                 // Output在CameraPreview.java的handler中实现

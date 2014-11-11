@@ -5,39 +5,18 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Picture;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.IBinder;
 import android.os.Message;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
-import android.view.View;
-import android.widget.FrameLayout;
-import android.view.KeyEvent;
-import android.hardware.Camera.PictureCallback;
-import android.hardware.Camera;
-import android.widget.Toast;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOError;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-
-import cn.edu.fudan.ee.glasscamera.CameraParams;
 
 /**
  * Created by zxtxin on 2014/9/2.
  */
 public class MainActivity extends Activity {
-    private CameraPreview mPreview;
+    private CameraGLSurfaceView glSurfaceView;
     private SocketService mBoundService;
     private GestureDetector mGestureDetector;// 手势检测器
     private int initialParams1;// 手指触摸触摸屏时的初始相机zoom倍数
@@ -45,12 +24,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mPreview = new CameraPreview(this);
-        FrameLayout layout = new FrameLayout(this);
-        layout.addView(mPreview);
-        layout.addView(new View(this));
-        layout.setKeepScreenOn(true);
-        setContentView(layout);
+        glSurfaceView = new CameraGLSurfaceView(this);
+        setContentView(glSurfaceView);
+        glSurfaceView.setKeepScreenOn(true);
 
         // 手势检测
         mGestureDetector = createGestureDetector(MainActivity.this);
@@ -59,6 +35,17 @@ public class MainActivity extends Activity {
         bindService(intent, conn, Context.BIND_AUTO_CREATE);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        glSurfaceView.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        glSurfaceView.onResume();
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -89,7 +76,7 @@ public class MainActivity extends Activity {
             public boolean onDown(MotionEvent motionEvent) {
                 // 按下
                 Log.i("Gesture", "onDown");
-                initialParams1 = CameraPreview.myParams.params1;
+                initialParams1 = CameraGLSurfaceView.myParams.params1;
                 return false;
             }
 
@@ -116,20 +103,20 @@ public class MainActivity extends Activity {
                 Log.i("motionEvent2.getX()", ""+x2);
                 if(x2 >= x)
                 {
-                    CameraPreview.myParams.params1 = initialParams1+(int)((60.0f-initialParams1+1.0f)/1366*(x2-x));
-                    Log.i("放大倍数", ""+CameraPreview.myParams.params1);
+                    CameraGLSurfaceView.myParams.params1 = initialParams1+(int)((60.0f-initialParams1+1.0f)/1366*(x2-x));
+                    Log.i("放大倍数", ""+CameraGLSurfaceView.myParams.params1);
                 }
                 else
                 {
-                    CameraPreview.myParams.params1 = initialParams1-(int)((initialParams1-0.0f+1.0f)/1366*(x-x2));
-                    Log.i("缩小倍数", ""+CameraPreview.myParams.params1);
+                    CameraGLSurfaceView.myParams.params1 = initialParams1-(int)((initialParams1-0.0f+1.0f)/1366*(x-x2));
+                    Log.i("缩小倍数", ""+CameraGLSurfaceView.myParams.params1);
                 }
                 //两种方式都可以
 //                mPreview.params.setZoom(CameraPreview.myParams.params1);
 //                mPreview.mCamera.setParameters(mPreview.params);
                 Message msg = new Message();
-                msg.obj = CameraPreview.myParams;
-                CameraPreview.myHandler.sendMessage(msg);
+                msg.obj = CameraGLSurfaceView.myParams;
+                CameraGLSurfaceView.myHandler.sendMessage(msg);
 
                 return false;
             }
