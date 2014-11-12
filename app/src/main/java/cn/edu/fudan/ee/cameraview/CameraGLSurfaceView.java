@@ -28,10 +28,8 @@ public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
     Camera mCamera;
     Camera.Parameters params;
     public static Handler myHandler;
-    static CameraParams myParams;// 用于初始化相机参数、接收服务端socket通信发送的相机参数、用户改变相机参数时保存参数
-    static CameraParams receiveParams;// 用于在handler中保存接收的相机参数
-    String filePath = Environment.getExternalStorageDirectory().getPath()+"/savedInitialParams.ser";// 保存相机参数的文件
-    FileOperation fileOperation = new FileOperation();// 文件操作类
+    CameraParams receiveParams;// 用于在handler中保存接收的相机参数
+    FileOperation fileOperation = FileOperation.getInstance();// 文件操作类
     // 各种相机效果
     private String[] effect_WhiteBalance = new String[]{params.WHITE_BALANCE_AUTO, params.WHITE_BALANCE_DAYLIGHT, params.WHITE_BALANCE_CLOUDY_DAYLIGHT,
             "tungsten", params.WHITE_BALANCE_FLUORESCENT, params.WHITE_BALANCE_INCANDESCENT, "horizon", "sunset",params.WHITE_BALANCE_SHADE,
@@ -64,6 +62,8 @@ public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
                 applyEffect(1, receiveParams.params2);// WhiteBalance
                 applyEffect(2, receiveParams.params3);// ExposureCompensation
 
+                fileOperation.myParams = receiveParams;
+
                 // 相机参数修改生效
                 mCamera.setParameters(params);
                 Log.i("Change camera parameters","changed");
@@ -78,9 +78,9 @@ public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
                     {
                         SocketService.objOut.writeObject(receiveParams);
                         Log.i("writeObject","OK ");
-                        Log.i("send params1 to server", ""+receiveParams.params1);
-                        Log.i("send params2 to server", ""+receiveParams.params2);
-                        Log.i("send params3 to server", ""+receiveParams.params3);
+                        Log.i("send params1 from handler to server", ""+receiveParams.params1);
+                        Log.i("send params2 from handler  to server", ""+receiveParams.params2);
+                        Log.i("send params3 from handler  to server", ""+receiveParams.params3);
                         SocketService.objOut.reset();// writeObject后，一定要reset()
                     }
                     catch (ClassCastException e)
@@ -94,7 +94,7 @@ public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
                 }
 
                 // 每次接收到相机参数，立即保存相机参数到glass的内存中
-                fileOperation.saveParamsToFile(filePath, receiveParams);
+                fileOperation.saveMyParams(receiveParams);
             }
         };
     }
@@ -171,6 +171,12 @@ public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
         params = mCamera.getParameters();
         params.setPreviewFpsRange(30000, 30000);
         params.setPreviewSize(640, 360);
+
+        // 初始设置相机显示效果参数
+        applyEffect(0, fileOperation.myParams.params1);
+        applyEffect(1, fileOperation.myParams.params2);
+        applyEffect(2, fileOperation.myParams.params3);
+
         mCamera.setParameters(params);
         try {
             mCamera.setPreviewTexture(mSurface);

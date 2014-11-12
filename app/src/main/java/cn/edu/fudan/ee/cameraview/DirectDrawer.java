@@ -42,10 +42,10 @@ public class DirectDrawer {
     private static final int COORDS_PER_VERTEX = 2;
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
     static float squareCoords[] = {
-            -1.0f,  1.0f,
             -1.0f, -1.0f,
-            1.0f, -1.0f,
-            1.0f,  1.0f,
+             1.0f, -1.0f,
+             1.0f,  1.0f,
+            -1.0f,  1.0f,
     };
     static float textureVertices[] = {
             0.0f, 1.0f,

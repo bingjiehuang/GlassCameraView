@@ -12,6 +12,8 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 
+import cn.edu.fudan.ee.glasscamera.CameraParams;
+
 /**
  * Created by zxtxin on 2014/9/2.
  */
@@ -20,6 +22,7 @@ public class MainActivity extends Activity {
     private SocketService mBoundService;
     private GestureDetector mGestureDetector;// 手势检测器
     private int initialParams1;// 手指触摸触摸屏时的初始相机zoom倍数
+    FileOperation fileOperation = FileOperation.getInstance();// 文件操作类
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +79,7 @@ public class MainActivity extends Activity {
             public boolean onDown(MotionEvent motionEvent) {
                 // 按下
                 Log.i("Gesture", "onDown");
-                initialParams1 = CameraGLSurfaceView.myParams.params1;
+                initialParams1 = fileOperation.myParams.params1;
                 return false;
             }
 
@@ -103,19 +106,19 @@ public class MainActivity extends Activity {
                 Log.i("motionEvent2.getX()", ""+x2);
                 if(x2 >= x)
                 {
-                    CameraGLSurfaceView.myParams.params1 = initialParams1+(int)((60.0f-initialParams1+1.0f)/1366*(x2-x));
-                    Log.i("放大倍数", ""+CameraGLSurfaceView.myParams.params1);
+                    fileOperation.myParams.params1 = initialParams1+(int)((60.0f-initialParams1+1.0f)/1366*(x2-x));
+                    Log.i("放大倍数", ""+fileOperation.myParams.params1);
                 }
                 else
                 {
-                    CameraGLSurfaceView.myParams.params1 = initialParams1-(int)((initialParams1-0.0f+1.0f)/1366*(x-x2));
-                    Log.i("缩小倍数", ""+CameraGLSurfaceView.myParams.params1);
+                    fileOperation.myParams.params1 = initialParams1-(int)((initialParams1-0.0f+1.0f)/1366*(x-x2));
+                    Log.i("缩小倍数", ""+fileOperation.myParams.params1);
                 }
                 //两种方式都可以
-//                mPreview.params.setZoom(CameraPreview.myParams.params1);
+//                mPreview.params.setZoom(fileOperation.myParams.params1);
 //                mPreview.mCamera.setParameters(mPreview.params);
                 Message msg = new Message();
-                msg.obj = CameraGLSurfaceView.myParams;
+                msg.obj = fileOperation.myParams;
                 CameraGLSurfaceView.myHandler.sendMessage(msg);
 
                 return false;

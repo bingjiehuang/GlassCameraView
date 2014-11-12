@@ -41,6 +41,7 @@ public class SocketService extends Service {
     final int SERVER_PORT = 22222;
     private ObjectInputStream objIn = null;// 用于socket通信
     static ObjectOutputStream objOut = null;// 用于socket通信
+    CameraParams cameraParams = null;
 
     @Override
     public void onCreate()
@@ -77,16 +78,16 @@ public class SocketService extends Service {
                             {
                                 // Input
                                 Object obj = objIn.readObject();
-                                CameraGLSurfaceView.myParams = (CameraParams)obj;
+                                cameraParams = (CameraParams)obj;
                                 Log.i("readObject","OK ");
-                                Log.i("myParams.1","params1 : "+CameraGLSurfaceView.myParams.params1);
+                                Log.i("receive myParams.1 from server","params1 : "+cameraParams.params1);
                                 // 测试各种参数
-                                Log.i("myParams.2","params2 : "+CameraGLSurfaceView.myParams.params2);
-                                Log.i("myParams.3","params3 : "+CameraGLSurfaceView.myParams.params3);
+                                Log.i("receive myParams.2 from server","params2 : "+cameraParams.params2);
+                                Log.i("receive myParams.3 from server","params3 : "+cameraParams.params3);
                                 Message msg = new Message();
                                 msg.obj = obj;
                                 CameraGLSurfaceView.myHandler.sendMessage(msg);
-                                Log.i("Message","sent");
+                                Log.i("Send received message from server  to handler","sent");
 
                                 // Output在CameraPreview.java的handler中实现
                             }

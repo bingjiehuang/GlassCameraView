@@ -1,5 +1,6 @@
 package cn.edu.fudan.ee.cameraview;
 
+import android.os.Environment;
 import android.util.Log;
 
 import java.io.File;
@@ -15,13 +16,45 @@ import cn.edu.fudan.ee.glasscamera.CameraParams;
  * Created by hbj on 2014/11/4.
  */
 public class FileOperation {
+    private static FileOperation fileOperation = null;
+
+    private FileOperation()
+    {
+
+    }
+
+    public static synchronized FileOperation getInstance()
+    {
+        if(fileOperation == null)
+        {
+            fileOperation = new FileOperation();
+        }
+        return fileOperation;
+    }
+
     FileInputStream fi;
     ObjectInputStream oi;
     FileOutputStream fo;
     ObjectOutputStream os;
+    String filePath = Environment.getExternalStorageDirectory().getPath()+"/savedInitialParams.ser";// 保存相机参数的文件
+    CameraParams myParams = getInitialParams();
+
+    public CameraParams getInitialParams()
+    {
+        if(myParams == null)
+        {
+            myParams = createOrLoadParamsFromFile();
+        }
+        return myParams;
+    }
+
+    public void saveMyParams(CameraParams cameraParams)
+    {
+        saveParamsToFile(cameraParams);
+    }
 
     // 启动相机时，若存在保存相机参数的文件，则加载；若不存在，则创建
-    public CameraParams createOrLoadParamsFromFile(String filePath)
+    public CameraParams createOrLoadParamsFromFile()
     {
         CameraParams cameraParams = null;
         File file = new File(filePath);
@@ -36,18 +69,18 @@ public class FileOperation {
             {
                 e.printStackTrace();
             }
-            saveParamsToFile(filePath, cameraParams);// 保存相机参数到文件
+            saveParamsToFile(cameraParams);// 保存相机参数到文件
         }
         else// 打开Glass应用时自动加载参数，设置照相机的参数值
         {
             Log.i("loadParamsFromFile", "已存在保存相机参数的.ser文件");
-            cameraParams = loadParamsFromFile(filePath);
+            cameraParams = loadParamsFromFile();
         }
         return cameraParams;
     }
 
     // 从文件加载参数
-    public CameraParams loadParamsFromFile(String filePath)
+    public CameraParams loadParamsFromFile()
     {
         CameraParams cameraParams = null;
         try {
@@ -73,7 +106,7 @@ public class FileOperation {
     }
 
     // 保存参数到文件
-    public void saveParamsToFile(String filePath, CameraParams cameraParams)
+    public void saveParamsToFile(CameraParams cameraParams)
     {
         try {
             fo = new FileOutputStream(filePath);
