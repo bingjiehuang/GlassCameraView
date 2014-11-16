@@ -6,13 +6,10 @@ import android.hardware.Camera;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-
 import java.io.IOException;
-
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -29,7 +26,7 @@ public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
     Camera.Parameters params;
     public static Handler myHandler;
     CameraParams receiveParams;// 用于在handler中保存接收的相机参数
-    FileOperation fileOperation = FileOperation.getInstance();// 文件操作类
+    FileOperation fileOperation = FileOperation.getInstance();// SharedPreferences操作类
     // 各种相机效果
     private String[] effect_WhiteBalance = new String[]{params.WHITE_BALANCE_AUTO, params.WHITE_BALANCE_DAYLIGHT, params.WHITE_BALANCE_CLOUDY_DAYLIGHT,
             "tungsten", params.WHITE_BALANCE_FLUORESCENT, params.WHITE_BALANCE_INCANDESCENT, "horizon", "sunset",params.WHITE_BALANCE_SHADE,
@@ -94,7 +91,13 @@ public class CameraGLSurfaceView extends GLSurfaceView implements GLSurfaceView.
                 }
 
                 // 每次接收到相机参数，立即保存相机参数到glass的内存中
-                fileOperation.saveMyParams(receiveParams);
+                try {
+                    fileOperation.saveMyParams(receiveParams);
+                }
+                catch(Throwable e)
+                {
+                    e.printStackTrace();
+                }
             }
         };
     }
